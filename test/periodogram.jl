@@ -20,7 +20,7 @@ x0 = readdlm(joinpath(dirname(@__FILE__), "data", "spectrogram_x.txt"),'\t')
 f0 = readdlm(joinpath(dirname(@__FILE__), "data", "spectrogram_f.txt"),'\t')
 t0 = readdlm(joinpath(dirname(@__FILE__), "data", "spectrogram_t.txt"),'\t')
 p0 = readdlm(joinpath(dirname(@__FILE__), "data", "spectrogram_p.txt"),'\t')
-p, t, f = spectrogram(x0, n=256, r=10, m=128)
+p, t, f = spectrogram(x0, n=256, fs=10.0, m=128)
 
 # with real input matlab outputs a 1-sided PSD
 @test_approx_eq p0[[1,129],:] p[[1,129],:]
@@ -34,27 +34,28 @@ data = Float64[0:7]
 
 # ~~~~~~~~~~~ This one tests periodogram ~~~~~~~~~~
 #Matlab: p = pwelch(0:7, [1, 1, 1, 1, 1, 1, 1, 1], 0, 8, 1, 'twosided')
-@test_approx_eq welch_pgram(data, length(data), 0)  Float64[ 98.0,
-                                                             13.656854249492380,
-                                                              4.0,
-                                                              2.343145750507620,
-                                                              2.0,
-                                                              2.343145750507620,
-                                                              4.0,
-                                                             13.656854249492380]
+@test_approx_eq welch_pgram(data, length(data), 0, 1.0)  Float64[ 98.0,
+                                                                  13.656854249492380,
+                                                                   4.0,
+                                                                   2.343145750507620,
+                                                                   2.0,
+                                                                   2.343145750507620,
+                                                                   4.0,
+                                                                  13.656854249492380]
 
 # ~~~~~~~~ Tests with no window ~~~~~~~~~~~~~~~~~~~
 # Matlab: p = pwelch(0:7, [1, 1], 0, 2, 1, 'twosided')
-@test_approx_eq welch_pgram(data, 2, 0)  Float64[34.5, 0.5]
+@test_approx_eq welch_pgram(data, 2, 0, 1.0)  Float64[34.5, 0.5]
+@test_approx_eq welch_pgram(data, 2, 0, 2.0)  Float64[34.5, 0.5]/2
 
 # Matlab: p = pwelch(0:7, [1, 1, 1], 0, 3, 1, 'twosided')
-@test_approx_eq welch_pgram(data, 3, 0)  Float64[25.5, 1.0, 1.0]
+@test_approx_eq welch_pgram(data, 3, 0, 1.0)  Float64[25.5, 1.0, 1.0]
 
 # Matlab: p = pwelch(0:7, [1, 1, 1], 1, 3, 1, 'twosided')
-@test_approx_eq welch_pgram(data, 3, 1)  Float64[35.0, 1.0, 1.0]
+@test_approx_eq welch_pgram(data, 3, 1, 1.0)  Float64[35.0, 1.0, 1.0]
 
 # Matlab: p = pwelch(0:7, [1, 1, 1, 1], 1, 4, 1, 'twosided')
-@test_approx_eq welch_pgram(data, 4, 1)  Float64[45, 2, 1, 2]
+@test_approx_eq welch_pgram(data, 4, 1, 1.0)  Float64[45, 2, 1, 2]
 
 # ~~~~~~~~~ Tests with window ~~~~~~~~~~~~~~~
 data = Float64[0:7]
@@ -83,5 +84,5 @@ cases = {hamming => Float64[65.461623986801527,
                             21.981076052592442]					 }
 
 for (window, expected) in cases
-	@test_approx_eq welch_pgram(data, length(data), 0, window) expected
+	@test_approx_eq welch_pgram(data, length(data), 0, 1.0, window) expected
 end

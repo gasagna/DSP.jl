@@ -23,6 +23,7 @@ function arraysplit(s, n::Integer, m::Integer)
     [s[(a*l + 1):(a*l + n)] for a=0:(k-1)]
 end
 
+
 # Compute the periodogram of a signal S, defined as 1/N*X[s(n)]^2, where X is the
 # DTFT of the signal S. 
 function periodogram(s, fs::FloatingPoint)
@@ -32,7 +33,7 @@ end
 
 function periodogram(s, fs::FloatingPoint, window::Function) 
   w = window(length(s))::Vector{Float64}
-  periodogram(s.*w)/(mean(w.^2)*fs)
+  periodogram(s.*w, fs)/mean(w.^2)
 end
 
 
@@ -44,13 +45,13 @@ end
 # vol AU-15, pp 70-73, 1967.
 function welch_pgram(s, n, m, fs::FloatingPoint)
     sig_split = arraysplit(s, n, m)
-    mean([periodogram(x) for x in sig_split])
+    mean([periodogram(x, fs) for x in sig_split])
 end
 
 function welch_pgram(s, n, m, fs::FloatingPoint, window::Function)
     sig_split = arraysplit(s, n, m)
     w = window(length(sig_split[1]))::Vector{Float64}
-    mean([periodogram(x.*w) for x in sig_split])/(mean(w.^2)*fs)
+    mean([periodogram(x.*w, fs) for x in sig_split])/(mean(w.^2)*fs)
 end
 
 
@@ -68,10 +69,10 @@ end
 
 function spectrogram(s; n=int(length(s)/8), m=int(n/2), fs=1, window::Function=n->one(eltype(s)))
   w=window(n)
-  p=[periodogram(s.*w) for s in arraysplit(s, n, m)]
+  p=[periodogram(s.*w, fs) for s in arraysplit(s, n, m)]
   p=hcat(p...)
-  p/=fs*mean(w.^2)
-  t=( (0:size(p,2)-1)*(n-m) + n/2) / r
+  p/=mean(w.^2)
+  t=((0:size(p,2)-1)*(n-m) + n/2)/fs
   f=(0:size(p,1)-1)/size(p,1)*fs
   p, t, f
 end
