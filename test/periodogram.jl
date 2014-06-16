@@ -86,3 +86,24 @@ cases = {hamming => Float64[65.461623986801527,
 for (window, expected) in cases
 	@test_approx_eq welch_pgram(data, length(data), 0, 1.0, window) expected
 end
+
+
+# ~~~~~~~ Tests for frequency function ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# length of array should match return value of fft/rfft
+for n in 4:10
+    @test size(frequencies(n, 1.0, Real))    == size(rfft(collect(0.0:n-1)))
+    @test size(frequencies(n, 1.0, Complex)) == size(fft(collect(0.0:n-1)))
+end
+
+# last element is fs/2 if n is even
+@test frequencies(6, 5.0, Real)[end] == 2.5
+
+# check against matlab
+# Matlab: [p, f] = pwelch(randn(1, 1000), 10, 0, 10, 1, 'onesided')
+@test frequencies(10, 1.0, Real) == Float64[0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+# Matlab: [p, f] = pwelch(randn(1, 1000), 9, 0, 9, 1, 'onesided')
+@test_approx_eq_eps frequencies(9, 1.0, Real) Float64[0.0000000, 
+                                                      0.1111111,
+                                                      0.2222222,
+                                                      0.3333333,
+                                                      0.4444444] 6 

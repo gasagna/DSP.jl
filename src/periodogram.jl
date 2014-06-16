@@ -3,7 +3,7 @@
 # of the methods is available at:
 # http://www.ee.lamar.edu/gleb/adsp/Lecture%2008%20-%20Nonparametric%20SE.pdf
 module Periodogram
-export arraysplit, periodogram, welch_pgram, bartlett_pgram, spectrogram
+export arraysplit, periodogram, welch_pgram, bartlett_pgram, spectrogram, frequencies
 
 # Split an array into subarrays of length N, with overlapping regions
 # of length M.
@@ -23,6 +23,15 @@ function arraysplit(s, n::Integer, m::Integer)
     [s[(a*l + 1):(a*l + n)] for a=0:(k-1)]
 end
 
+function frequencies(n::Integer, fs::FloatingPoint, stype::DataType)
+    if stype <: Real
+        return Float64[fs*f/n for f in 0.0:(n - n%2)>>1]
+    else
+        pos = Float64[fs*f/n for f in 0.0:(n - n%2)>>1]
+        neg = Float64[fs*f/n for f in -(n>>1 + n%2 -1):-1.0]
+        return [pos, neg]
+    end
+end
 
 # Compute the periodogram of a signal S, defined as 1/N*X[s(n)]^2, where X is the
 # DTFT of the signal S. 
