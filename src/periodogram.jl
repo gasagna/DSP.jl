@@ -25,14 +25,14 @@ end
 
 # Compute the periodogram of a signal S, defined as 1/N*X[s(n)]^2, where X is the
 # DTFT of the signal S. 
-function periodogram(s)
+function periodogram(s, fs::FloatingPoint)
     s_fft = fft(s)
-    abs2(s_fft)/length(s)
+    abs2(s_fft)/(length(s)*fs)
 end
 
-function periodogram(s, window::Function) 
+function periodogram(s, fs::FloatingPoint, window::Function) 
   w = window(length(s))::Vector{Float64}
-  periodogram(s.*w)/mean(w.^2)
+  periodogram(s.*w)/(mean(w.^2)*fs)
 end
 
 
@@ -42,15 +42,15 @@ end
 # for the Estimation of Power Spectra: A Method based on Time Averaging over Short,
 # Modified Periodograms."  P. Welch, IEEE Transactions on Audio and Electroacoustics,
 # vol AU-15, pp 70-73, 1967.
-function welch_pgram(s, n, m)
+function welch_pgram(s, n, m, fs::FloatingPoint)
     sig_split = arraysplit(s, n, m)
     mean([periodogram(x) for x in sig_split])
 end
 
-function welch_pgram(s, n, m, window::Function)
+function welch_pgram(s, n, m, fs::FloatingPoint, window::Function)
     sig_split = arraysplit(s, n, m)
     w = window(length(sig_split[1]))::Vector{Float64}
-    mean([periodogram(x.*w) for x in sig_split])/mean(w.^2)
+    mean([periodogram(x.*w) for x in sig_split])/(mean(w.^2)*fs)
 end
 
 
@@ -59,20 +59,20 @@ end
 # Periodograms from Time Series with Continuous Spectra", M.S. Bartlett, Nature 
 # #4096, May 1, 1948.The estimate is equivalent to welch_pgram(s, n, 0), as 
 # it is a special case of the Welch estimate of the periodogram.
-bartlett_pgram(s, n) = welch_pgram(s, n, 0)
+bartlett_pgram(s, n, fs::FloatingPoint) = welch_pgram(s, n, 0, fs)
 
-function bartlett_pgram(s, n, window::Function)
-    welch_pgram(s, n, 0, window)
+function bartlett_pgram(s, n, fs::FloatingPoint, window::Function)
+    welch_pgram(s, n, 0, fs, window)
 end
 
 
-function spectrogram(s; n=int(length(s)/8), m=int(n/2), r=1, window::Function=n->one(eltype(s)))
+function spectrogram(s; n=int(length(s)/8), m=int(n/2), fs=1, window::Function=n->one(eltype(s)))
   w=window(n)
   p=[periodogram(s.*w) for s in arraysplit(s, n, m)]
   p=hcat(p...)
-  p/=r*mean(w.^2)
+  p/=fs*mean(w.^2)
   t=( (0:size(p,2)-1)*(n-m) + n/2) / r
-  f=(0:size(p,1)-1)/size(p,1)*r
+  f=(0:size(p,1)-1)/size(p,1)*fs
   p, t, f
 end
 
